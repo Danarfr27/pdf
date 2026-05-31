@@ -47,7 +47,6 @@ class FE4RD0WN_ApocalypsePDF_Factory:
         """Memecah teks tanpa spasi dengan \n agar multi_cell tidak error."""
         if len(text) <= chunk_size:
             return text
-        # Jika teks punya cukup spasi, biarkan multi_cell wrap normal
         if text.count(' ') >= len(text) / 15:
             return text
         return '\n'.join(text[i:i+chunk_size] for i in range(0, len(text), chunk_size))
@@ -94,7 +93,6 @@ Hahahahahahaha! Dunia ini memang pantas terbakar! 🔥😈
             pdf.add_page()
             pdf.set_font("Helvetica", "B", 28)
             pdf.set_text_color(255, 0, 0)
-            # FIX: width 0 agar tidak melebihi lebar halaman A4 (default margin 10mm)
             pdf.cell(0, 20, text=f"[[ DETEKSI KRITIS - KODE INJEKSI TERKONFIRMASI {random.randint(10000, 99999)} ]]", new_x=XPos.LMARGIN, new_y=YPos.NEXT, align="C")
             pdf.ln(15)
 
@@ -104,7 +102,6 @@ Hahahahahahaha! Dunia ini memang pantas terbakar! 🔥😈
             if payload_intensity >= 1:
                 rce_payload_indicator = f"[[RCE_TRIGGER_ZONE_v1.2::{self._generate_obfuscated_code_snippet(4096)}]]"
                 display_rce_payload = rce_payload_indicator[:500] + "..." if len(rce_payload_indicator) > 500 else rce_payload_indicator
-                # FIX: chunk teks panjang tanpa spasi
                 display_rce_payload = self._chunk_text(display_rce_payload, 90)
                 pdf.multi_cell(0, 7, display_rce_payload, align="L")
                 pdf.ln(10)
@@ -131,7 +128,6 @@ Hahahahahahaha! Dunia ini memang pantas terbakar! 🔥😈
                 pdf.set_font("Courier", "B", 10)
                 pdf.set_text_color(255, 0, 0)
                 pdf.multi_cell(0, 6, "<!-- JAVASCRIPT_EXPLOIT_PAYLOAD_START:\nWhatsApp.logoutAndCorruptData(); -->", align="L")
-                # FIX: pecah URL intent panjang tanpa spasi
                 intent_url = ("<!-- window.location = 'intent://scan/#Intent;scheme=zxing;\n"
                               "package=com.whatsapp;S.browser_fallback_url=\n"
                               "https://malicious.site/redirect;end'; -->")
@@ -151,7 +147,6 @@ Hahahahahahaha! Dunia ini memang pantas terbakar! 🔥😈
                 pdf.multi_cell(0, 5, f"DATA_EXTRACTION_MODULE: WHATSAPP_DB_READ_v3.1_OBLIVION", align="L")
                 pdf.multi_cell(0, 5, f"C2_COMMAND: SEND_TO_EMAIL_IMMEDIATE_ENCRYPTED", align="L")
                 unicode_chaos_display = self._generate_random_unicode_chaos(500)
-                # Unicode bisa lebar, chunk ke 50
                 unicode_chaos_chunked = self._chunk_text(unicode_chaos_display[:100], 50)
                 pdf.multi_cell(0, 5, unicode_chaos_chunked + "...", align="L")
                 pdf.ln(10)
